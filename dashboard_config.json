@@ -1,0 +1,23 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8888,
+    "refresh_interval_seconds": 10
+  },
+  "database": {
+    "path": "/app/crawler_master_full.db"
+  },
+  "paths": {
+    "download_dir": "/data/downloads",
+    "movies_dir": "/data/movies"
+  },
+  "docker": {
+    "container_name": "pikpak-bot-v4",
+    "log_lines": 200
+  },
+  "ui": {
+    "title": "PikPak Bot Dashboard",
+    "log_lines_display": 100,
+    "theme": "dark"
+  }
+}

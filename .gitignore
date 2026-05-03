@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Env / secret
+.env
+*.env
+bot.env
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+
+# Temp
+tmp/
+cache/

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PikPak Bot Dashboard</title>
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --bg2: #16161a;
+    --bg3: #1e1e24;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8e8ec;
+    --muted: #888892;
+    --accent: #4f8fff;
+    --green: #3ecf8e;
+    --amber: #f5a623;
+    --red: #e05252;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.6; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-size: 15px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  .logo span { color: var(--accent); }
+  .hdr-right { display: flex; align-items: center; gap: 16px; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .ts { color: var(--muted); font-size: 11px; }
+
+  .main { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* STAT CARDS */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat-label { font-size: 10px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .stat-val { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+  .stat-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .c-green { color: var(--green); }
+  .c-amber { color: var(--amber); }
+  .c-red   { color: var(--red); }
+  .c-blue  { color: var(--accent); }
+  .c-purple{ color: var(--purple); }
+  .c-teal  { color: var(--teal); }
+  .c-muted { color: var(--muted); }
+
+  /* SECTION */
+  .section { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .section-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted);
+  }
+  .section-body { padding: 0; }
+
+  /* DOWNLOAD ROWS */
+  .dl-row {
+    display: grid; grid-template-columns: 120px 1fr 80px 60px;
+    align-items: center; gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dl-row:last-child { border-bottom: none; }
+  .dl-code { font-weight: 700; color: var(--accent); font-size: 12px; }
+  .progress-bar-wrap { background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.5s ease; }
+  .dl-pct { text-align: right; color: var(--text); font-weight: 700; }
+  .dl-size { text-align: right; color: var(--muted); font-size: 11px; }
+  .empty-row { padding: 16px; color: var(--muted); font-size: 12px; text-align: center; }
+
+  /* TWO COL LAYOUT */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* SMALL LIST */
+  .small-list { list-style: none; }
+  .small-list li {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .small-list li:last-child { border-bottom: none; }
+  .badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 2px 7px; border-radius: 4px;
+    background: rgba(255,255,255,0.07); color: var(--muted);
+  }
+  .badge-red  { background: rgba(224,82,82,0.15); color: var(--red); }
+  .badge-green{ background: rgba(62,207,142,0.15); color: var(--green); }
+  .badge-amber{ background: rgba(245,166,35,0.15); color: var(--amber); }
+
+  /* LOG */
+  .log-wrap {
+    background: var(--bg);
+    font-family: var(--font);
+    font-size: 11px;
+    line-height: 1.7;
+    height: 340px;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+  .log-line { white-space: pre-wrap; word-break: break-all; color: var(--muted); }
+  .log-line.hi-dl     { color: var(--accent); }
+  .log-line.hi-done   { color: var(--green); }
+  .log-line.hi-err    { color: var(--red); }
+  .log-line.hi-warn   { color: var(--amber); }
+  .log-line.hi-scan   { color: var(--teal); }
+  .log-line.hi-crawl  { color: var(--purple); }
+
+  /* DISK BAR */
+  .disk-row { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; }
+  .disk-item-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+  .disk-item-label span:first-child { color: var(--muted); }
+  .disk-item-label span:last-child  { font-weight: 700; }
+  .disk-bar-wrap { background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden; }
+  .disk-bar { height: 100%; border-radius: 4px; }
+  .disk-bar.dl  { background: var(--accent); }
+  .disk-bar.mov { background: var(--green); }
+
+  /* REFRESH BTN */
+  .btn {
+    background: transparent; border: 1px solid var(--border2);
+    color: var(--muted); font-family: var(--font); font-size: 11px;
+    padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--bg3); color: var(--text); }
+
+  /* PIPELINE FLOW */
+  .pipeline { display: flex; align-items: center; gap: 0; padding: 14px 16px; overflow-x: auto; }
+  .pipe-node {
+    display: flex; flex-direction: column; align-items: center;
+    min-width: 90px; padding: 8px 10px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; text-align: center;
+  }
+  .pipe-node .pn-val { font-size: 20px; font-weight: 700; line-height: 1; }
+  .pipe-node .pn-label { font-size: 9px; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .pipe-arrow { color: var(--border2); font-size: 18px; padding: 0 6px; flex-shrink: 0; }
+
+
+
+  /* ACTOR STATS TABLE */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tbl th {
+    padding: 8px 12px; text-align: left;
+    font-size: 10px; letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    font-weight: 700; white-space: nowrap;
+  }
+  .tbl th.r, .tbl td.r { text-align: right; }
+  .tbl td {
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: rgba(255,255,255,0.02); }
+  .actor-name-btn {
+    background: none; border: none; color: var(--accent);
+    font-family: var(--font); font-size: 12px; font-weight: 700;
+    cursor: pointer; padding: 0; text-align: left;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .actor-name-btn:hover { text-decoration: underline; }
+  .actor-name-btn .arrow { color: var(--muted); font-size: 10px; transition: transform 0.2s; }
+  .actor-name-btn.open .arrow { transform: rotate(90deg); }
+
+  /* PROGRESS MINI */
+  .mini-bar-wrap { background: var(--bg3); border-radius: 3px; height: 4px; width: 80px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .mini-bar { height: 100%; border-radius: 3px; background: var(--green); }
+
+  /* FILMS EXPAND ROW */
+  .films-row { background: var(--bg); }
+  .films-row td { padding: 0; }
+  .films-inner { padding: 8px 16px 12px 32px; display: none; }
+  .films-inner.open { display: block; }
+  .films-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 6px; margin-top: 8px;
+  }
+  .film-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .film-code { font-weight: 700; font-size: 12px; }
+  .film-meta { font-size: 10px; color: var(--muted); }
+  .film-card.st-done      { border-color: rgba(62,207,142,0.3); }
+  .film-card.st-pending   { border-color: rgba(79,143,255,0.3); }
+  .film-card.st-exhausted { border-color: rgba(224,82,82,0.3); }
+  .film-card.st-skip      { opacity: 0.5; }
+
+  /* ACTORS */
+  .actor-form { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .actor-form input {
+    background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+    font-family: var(--font); font-size: 12px; padding: 6px 10px; border-radius: 6px; outline: none;
+  }
+  .actor-form input:focus { border-color: var(--accent); }
+  .actor-form input.inp-name { width: 160px; }
+  .actor-form input.inp-url  { flex: 1; }
+  .btn-add {
+    background: var(--accent); border: none; color: #fff;
+    font-family: var(--font); font-size: 12px; font-weight: 700;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+  }
+  .btn-add:hover { opacity: 0.85; }
+  .actor-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px; border-bottom: 1px solid var(--border); gap: 12px;
+  }
+  .actor-row:last-child { border-bottom: none; }
+  .actor-name { font-weight: 700; color: var(--text); min-width: 140px; font-size: 12px; }
+  .actor-url  { color: var(--muted); font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-del {
+    background: transparent; border: 1px solid rgba(224,82,82,0.3);
+    color: var(--red); font-family: var(--font); font-size: 11px;
+    padding: 3px 8px; border-radius: 5px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  }
+  .btn-del:hover { background: rgba(224,82,82,0.12); }
+  .actor-count { color: var(--muted); font-size: 11px; }
+  .msg-ok  { color: var(--green); font-size: 11px; }
+  .msg-err { color: var(--red);   font-size: 11px; }
+
+  .scroll-bottom-btn {
+    position: sticky; bottom: 4px; float: right;
+    background: var(--bg3); border: 1px solid var(--border2);
+    color: var(--muted); font-family: var(--font); font-size: 10px;
+    padding: 3px 8px; border-radius: 5px; cursor: pointer;
+    margin: 4px 4px 0 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Pik<span>Pak</span> Bot</div>
+  <div class="hdr-right">
+    <span class="live-dot" id="live-dot"></span>
+    <span class="ts" id="ts-label">--</span>
+    <button class="btn" onclick="fetchAll()">? Refresh</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- STAT CARDS -->
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card"><div class="stat-label">Crawled</div><div class="stat-val c-purple" id="s-crawl">-</div></div>
+    <div class="stat-card"><div class="stat-label">Có torrent</div><div class="stat-val c-blue" id="s-torrent">-</div></div>
+    <div class="stat-card"><div class="stat-label">Trên cloud</div><div class="stat-val c-teal" id="s-cloud">-</div></div>
+    <div class="stat-card"><div class="stat-label">Trên disk</div><div class="stat-val c-green" id="s-disk">-</div></div>
+    <div class="stat-card"><div class="stat-label">Done</div><div class="stat-val c-green" id="s-done">-</div></div>
+    <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-val c-amber" id="s-pending">-</div></div>
+    <div class="stat-card"><div class="stat-label">Exhausted</div><div class="stat-val c-red" id="s-exhausted">-</div></div>
+    <div class="stat-card"><div class="stat-label">Skip</div><div class="stat-val c-muted" id="s-skip">-</div></div>
+  </div>
+
+  <!-- PIPELINE FLOW -->
+  <div class="section">
+    <div class="section-hdr">Pipeline flow</div>
+    <div class="pipeline" id="pipeline">
+      <div class="pipe-node"><div class="pn-val c-purple" id="p-crawl">-</div><div class="pn-label">Crawled</div></div>
+      <div class="pipe-arrow">?</div>
+      <div class="pipe-node"><div class="pn-val c-blue" id="p-torrent">-</div><div class="pn-label">Torrent</div></div>
+      <div class="pipe-arrow">?</div>
+      <div class="pipe-node"><div class="pn-val c-teal" id="p-cloud">-</div><div class="pn-label">Cloud</div></div>
+      <div class="pipe-arrow">?</div>
+      <div class="pipe-node"><div class="pn-val c-amber" id="p-pending">-</div><div class="pn-label">Pending</div></div>
+      <div class="pipe-arrow">?</div>
+      <div class="pipe-node"><div class="pn-val c-green" id="p-done">-</div><div class="pn-label">Done</div></div>
+    </div>
+  </div>
+
+  <!-- DOWNLOADING -->
+  <div class="section">
+    <div class="section-hdr">
+      <span>Ðang download</span>
+      <span id="dl-count" class="c-amber">0 files</span>
+    </div>
+    <div class="section-body" id="dl-list">
+      <div class="empty-row">Không có file nào dang download</div>
+    </div>
+  </div>
+
+  <!-- DISK -->
+  <div class="section">
+    <div class="section-hdr">Disk usage</div>
+    <div class="disk-row">
+      <div>
+        <div class="disk-item-label"><span>/data/downloads</span><span id="disk-dl" class="c-amber">- GB</span></div>
+        <div class="disk-bar-wrap"><div class="disk-bar dl" id="bar-dl" style="width:0%"></div></div>
+      </div>
+      <div>
+        <div class="disk-item-label"><span>/data/movies</span><span id="disk-mov" class="c-green">- GB</span></div>
+        <div class="disk-bar-wrap"><div class="disk-bar mov" id="bar-mov" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECENT DONE + EXHAUSTED -->
+  <div class="two-col">
+    <div class="section">
+      <div class="section-hdr">Recent done</div>
+      <ul class="small-list" id="recent-done">
+        <li><span class="c-muted">Loading...</span></li>
+      </ul>
+    </div>
+    <div class="section">
+      <div class="section-hdr">Exhausted</div>
+      <ul class="small-list" id="exhausted-list">
+        <li><span class="c-muted">Loading...</span></li>
+      </ul>
+    </div>
+  </div>
+
+
+
+  <!-- ACTOR STATS -->
+  <div class="section">
+    <div class="section-hdr">
+      <span>Th?ng kê theo di?n viên</span>
+      <input id="actor-search" type="text" placeholder="Tìm di?n viên..."
+        style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+               font-family:var(--font);font-size:11px;padding:4px 8px;border-radius:5px;outline:none;width:160px"
+        oninput="filterActorStats()">
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl" id="actor-stats-table">
+        <thead>
+          <tr>
+            <th>Di?n viên</th>
+            <th class="r">T?ng</th>
+            <th class="r">Done</th>
+            <th class="r">Pending</th>
+            <th class="r">Exhausted</th>
+            <th class="r">Skip</th>
+            <th class="r">% Done</th>
+            <th class="r">Downloaded</th>
+          </tr>
+        </thead>
+        <tbody id="actor-stats-body">
+          <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:16px">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ACTORS -->
+  <div class="section">
+    <div class="section-hdr">
+      <span>Actors</span>
+      <span id="actor-count" class="actor-count">-</span>
+    </div>
+    <div class="actor-form">
+      <input class="inp-name" id="inp-name" type="text" placeholder="Tên actor">
+      <input class="inp-url"  id="inp-url"  type="text" placeholder="URL trang actor (vd: https://jav.guru/actress/...)">
+      <button class="btn-add" onclick="addActor()">+ Thêm</button>
+      <span id="actor-msg"></span>
+    </div>
+    <div id="actor-list" style="max-height:260px;overflow-y:auto"></div>
+  </div>
+
+  <!-- LOGS -->
+  <div class="section">
+    <div class="section-hdr">
+      <span>Container logs</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="color:var(--muted);font-size:11px">
+          <input type="checkbox" id="auto-scroll" checked style="margin-right:4px">auto scroll
+        </label>
+        <button class="btn" onclick="fetchLogs()">?</button>
+      </div>
+    </div>
+    <div class="log-wrap" id="log-wrap"></div>
+  </div>
+
+</div>
+
+<script>
+const REFRESH = 10000;
+let logPaused = false;
+
+function fmt(n) { return n == null ? '-' : n.toLocaleString(); }
+function fmtTime(ts) {
+  if (!ts) return '-';
+  const d = new Date(ts * 1000);
+  return d.toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+
+
+
+let actorStatsData = [];
+
+async function fetchActorStats() {
+  try {
+    const r = await fetch('/api/actors/stats');
+    actorStatsData = await r.json();
+    renderActorStats(actorStatsData);
+  } catch(e) { console.error('actor stats error:', e); }
+}
+
+function filterActorStats() {
+  const q = document.getElementById('actor-search').value.toLowerCase();
+  const filtered = actorStatsData.filter(a => a.name.toLowerCase().includes(q));
+  renderActorStats(filtered);
+}
+
+function renderActorStats(data) {
+  const tbody = document.getElementById('actor-stats-body');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:16px">Không có d? li?u</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map((a, i) => {
+    const pct = a.total > 0 ? Math.round(a.done / a.total * 100) : 0;
+    const gb  = a.done_gb > 0 ? a.done_gb + ' GB' : '--';
+    return `
+      <tr>
+        <td>
+          <button class="actor-name-btn" id="abtn-${i}" onclick="toggleFilms(${i}, '${a.name.replace(/'/g,"\\'")}')">
+            <span class="arrow">?</span>${a.name}
+          </button>
+        </td>
+        <td class="r">${a.total}</td>
+        <td class="r c-green">${a.done}</td>
+        <td class="r c-amber">${a.pending}</td>
+        <td class="r c-red">${a.exhausted}</td>
+        <td class="r c-muted">${a.skip}</td>
+        <td class="r">
+          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+            <span>${pct}%</span>
+            <div class="mini-bar-wrap"><div class="mini-bar" style="width:${pct}%"></div></div>
+          </div>
+        </td>
+        <td class="r c-teal">${gb}</td>
+      </tr>
+      <tr class="films-row" id="films-row-${i}">
+        <td colspan="8">
+          <div class="films-inner" id="films-inner-${i}">
+            <div style="color:var(--muted);font-size:11px">Ðang t?i...</div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function toggleFilms(idx, name) {
+  const btn   = document.getElementById(`abtn-${idx}`);
+  const inner = document.getElementById(`films-inner-${idx}`);
+  const isOpen = inner.classList.contains('open');
+
+  if (isOpen) {
+    inner.classList.remove('open');
+    btn.classList.remove('open');
+    return;
+  }
+
+  btn.classList.add('open');
+  inner.classList.add('open');
+
+  // Fetch films n?u chua load
+  if (inner.dataset.loaded) return;
+  inner.dataset.loaded = '1';
+
+  try {
+    const r = await fetch('/api/actors/films?name=' + encodeURIComponent(name));
+    const films = await r.json();
+    if (!films.length) {
+      inner.innerHTML = '<div style="color:var(--muted);font-size:11px">Không có phim nào.</div>';
+      return;
+    }
+    const statusEmoji = {done:'?',pending:'?',skip:'?',exhausted:'?'};
+    inner.innerHTML = `
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${films.length} phim</div>
+      <div class="films-grid">
+        ${films.map(f => `
+          <div class="film-card st-${f.status}">
+            <div class="film-code">${statusEmoji[f.status]||'?'} ${f.code}</div>
+            <div class="film-meta">${f.quality || '--'} · ${f.size_str || (f.size_gb > 0 ? f.size_gb+'GB' : '--')}</div>
+          </div>
+        `).join('')}
+      </div>`;
+  } catch(e) {
+    inner.innerHTML = '<div style="color:var(--red)">L?i t?i d? li?u</div>';
+  }
+}
+
+let actorData = [];
+
+async function fetchActors() {
+  try {
+    const r = await fetch('/api/actors');
+    actorData = await r.json();
+    document.getElementById('actor-count').textContent = actorData.length + ' actors';
+    const el = document.getElementById('actor-list');
+    if (actorData.length === 0) {
+      el.innerHTML = '<div class="empty-row">Chua có actor nào</div>';
+      return;
+    }
+    el.innerHTML = actorData.map(a => `
+      <div class="actor-row">
+        <span class="actor-name">${a.name}</span>
+        <span class="actor-url" title="${a.url}">${a.url}</span>
+        <button class="btn-del" onclick="delActor(${a.id}, '${a.name.replace(/'/g,"\\'")}')">Xóa</button>
+      </div>
+    `).join('');
+  } catch(e) { console.error('actors error:', e); }
+}
+
+async function addActor() {
+  const name = document.getElementById('inp-name').value.trim();
+  const url  = document.getElementById('inp-url').value.trim();
+  const msg  = document.getElementById('actor-msg');
+  if (!name || !url) { msg.className='msg-err'; msg.textContent='Nh?p d? tên và URL'; return; }
+  try {
+    const r = await fetch('/api/actors/add', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({name, url})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      msg.className='msg-ok'; msg.textContent='Ðã thêm!';
+      document.getElementById('inp-name').value = '';
+      document.getElementById('inp-url').value  = '';
+      setTimeout(() => msg.textContent='', 3000);
+      fetchActors();
+    } else {
+      msg.className='msg-err'; msg.textContent = d.error;
+    }
+  } catch(e) { msg.className='msg-err'; msg.textContent='L?i k?t n?i'; }
+}
+
+async function delActor(id, name) {
+  if (!confirm('Xóa actor "' + name + '"?')) return;
+  try {
+    const r = await fetch('/api/actors/delete', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({id})
+    });
+    const d = await r.json();
+    if (d.ok) fetchActors();
+  } catch(e) { console.error(e); }
+}
+
+async function fetchStats() {
+  try {
+    const r = await fetch('/api/stats');
+    const d = await r.json();
+
+    document.getElementById('ts-label').textContent = fmtTime(d.ts);
+    document.getElementById('s-crawl').textContent    = fmt(d.crawl_total);
+    document.getElementById('s-torrent').textContent  = fmt(d.torrent_total);
+    document.getElementById('s-cloud').textContent    = fmt(d.cloud_codes);
+    document.getElementById('s-disk').textContent     = fmt(d.on_disk);
+    document.getElementById('s-done').textContent     = fmt(d.process.done);
+    document.getElementById('s-pending').textContent  = fmt(d.process.pending);
+    document.getElementById('s-exhausted').textContent= fmt(d.process.exhausted);
+    document.getElementById('s-skip').textContent     = fmt(d.process.skip);
+
+    document.getElementById('p-crawl').textContent   = fmt(d.crawl_total);
+    document.getElementById('p-torrent').textContent = fmt(d.torrent_total);
+    document.getElementById('p-cloud').textContent   = fmt(d.cloud_codes);
+    document.getElementById('p-pending').textContent = fmt(d.process.pending);
+    document.getElementById('p-done').textContent    = fmt(d.process.done);
+
+    // Disk
+    const dlgb  = d.disk.downloads_gb;
+    const movgb = d.disk.movies_gb;
+    const maxgb = Math.max(dlgb + movgb, 1);
+    document.getElementById('disk-dl').textContent  = dlgb + ' GB';
+    document.getElementById('disk-mov').textContent = movgb + ' GB';
+    document.getElementById('bar-dl').style.width   = Math.min(dlgb / maxgb * 100, 100) + '%';
+    document.getElementById('bar-mov').style.width  = Math.min(movgb / maxgb * 100, 100) + '%';
+
+    // Downloading
+    const dlList = document.getElementById('dl-list');
+    document.getElementById('dl-count').textContent = d.downloading.length + ' files';
+    if (d.downloading.length === 0) {
+      dlList.innerHTML = '<div class="empty-row">Không có file nào dang download</div>';
+    } else {
+      dlList.innerHTML = d.downloading.map(item => `
+        <div class="dl-row">
+          <div class="dl-code">${item.code}</div>
+          <div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" style="width:${item.percent}%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px">
+              <span style="color:var(--teal);font-size:10px">? ${item.speed}</span>
+              <span style="color:var(--muted);font-size:10px">ETA ${item.eta}</span>
+            </div>
+          </div>
+          <div class="dl-pct">${item.percent}%</div>
+          <div class="dl-size">${item.downloaded_mb}/${item.total_mb}MB</div>
+        </div>
+      `).join('');
+    }
+
+    // Recent done
+    const rdEl = document.getElementById('recent-done');
+    if (d.recent_done.length === 0) {
+      rdEl.innerHTML = '<li><span class="c-muted">Chua có</span></li>';
+    } else {
+      rdEl.innerHTML = d.recent_done.map(x => `
+        <li>
+          <span class="c-green">${x.code}</span>
+          <span class="badge badge-green">${fmtTime(x.ts)}</span>
+        </li>
+      `).join('');
+    }
+
+    // Exhausted
+    const exEl = document.getElementById('exhausted-list');
+    if (d.exhausted.length === 0) {
+      exEl.innerHTML = '<li><span class="c-muted">Không có</span></li>';
+    } else {
+      exEl.innerHTML = d.exhausted.map(x => `
+        <li>
+          <span class="c-red">${x.code}</span>
+          <span class="badge badge-red">retry ${x.retry}</span>
+        </li>
+      `).join('');
+    }
+
+    // Live dot
+    document.getElementById('live-dot').style.background = 'var(--green)';
+  } catch(e) {
+    document.getElementById('live-dot').style.background = 'var(--red)';
+    console.error('Stats error:', e);
+  }
+}
+
+const LOG_COLORS = [
+  [/\[DL\].*DONE|MOVED/i,       'hi-done'],
+  [/\[DL\]/i,                    'hi-dl'],
+  [/error|ERROR|FAILED|fail/i,   'hi-err'],
+  [/TIMEOUT|STALL|stall/i,       'hi-warn'],
+  [/\[SCANNER\]/i,               'hi-scan'],
+  [/\[CRAWL\]|\[TORRENT\]/i,     'hi-crawl'],
+];
+
+function colorLine(line) {
+  for (const [pat, cls] of LOG_COLORS) {
+    if (pat.test(line)) return cls;
+  }
+  return '';
+}
+
+async function fetchLogs() {
+  try {
+    const r = await fetch('/api/logs');
+    const d = await r.json();
+    const wrap = document.getElementById('log-wrap');
+    wrap.innerHTML = d.lines.map(l => {
+      const cls = colorLine(l);
+      const safe = l.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return `<div class="log-line ${cls}">${safe}</div>`;
+    }).join('');
+    if (document.getElementById('auto-scroll').checked) {
+      wrap.scrollTop = wrap.scrollHeight;
+    }
+  } catch(e) {
+    console.error('Log error:', e);
+  }
+}
+
+async function fetchAll() {
+  await Promise.all([fetchStats(), fetchLogs(), fetchActors(), fetchActorStats()]);
+}
+
+fetchAll();
+setInterval(fetchAll, REFRESH);
+</script>
+</body>
+</html>
