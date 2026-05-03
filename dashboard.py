@@ -42,6 +42,43 @@ def db_query(sql, params=()):
     except Exception as e:
         return []
 
+def db_write(sql, params=()):
+    """Execute a single write statement, return rowcount."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        conn.execute("PRAGMA journal_mode=WAL")
+        cur = conn.execute(sql, params)
+        conn.commit()
+        rowcount = cur.rowcount
+        conn.close()
+        return rowcount, None
+    except Exception as e:
+        return 0, str(e)
+
+def db_write_many(statements):
+    """
+    Execute multiple write statements in one transaction.
+    statements: list of (sql, params) tuples
+    Returns list of (rowcount, error|None) per statement.
+    """
+    results = []
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        conn.execute("PRAGMA journal_mode=WAL")
+        for sql, params in statements:
+            try:
+                cur = conn.execute(sql, params)
+                results.append((cur.rowcount, None))
+            except Exception as e:
+                results.append((0, str(e)))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        # Connection-level failure — fill remaining results
+        while len(results) < len(statements):
+            results.append((0, str(e)))
+    return results
+
 # -------------------------------------------------------
 # DISK SIZE HELPER
 # -------------------------------------------------------
@@ -102,7 +139,7 @@ def api_stats():
     cloud_codes   = (db_query("SELECT COUNT(DISTINCT code) FROM pikpak_cloud") or [[0]])[0][0]
     on_disk       = (db_query("SELECT COUNT(*) FROM agent_snapshot") or [[0]])[0][0]
 
-    # Download progress: doc size thuc tu disk (downloaded_bytes trong DB co the lag)
+    # Download progress
     pending_codes = db_query("""
         SELECT p.code, p.retry_count,
                COALESCE((SELECT SUM(size_bytes) FROM pikpak_cloud WHERE code=p.code), 0) as total_bytes,
@@ -156,7 +193,7 @@ def api_stats():
         ORDER BY updated_at DESC LIMIT 8
     """)
 
-    # Exhausted codes
+    # Exhausted codes (preview — full list via /api/exhausted)
     exhausted = db_query("""
         SELECT code, retry_count FROM process
         WHERE status='exhausted'
@@ -209,7 +246,86 @@ def api_config():
     LOG_LINES      = cfg["docker"]["log_lines"]
     return jsonify({"ok": True, "config": cfg})
 
+# -------------------------------------------------------
+# API: /api/exhausted  — danh sach day du (khong gioi han 10)
+# -------------------------------------------------------
+@app.route("/api/exhausted")
+def api_exhausted():
+    rows = db_query("""
+        SELECT code, retry_count, updated_at
+        FROM process
+        WHERE status = 'exhausted'
+        ORDER BY updated_at DESC
+    """)
+    return jsonify({
+        "exhausted": [
+            {"code": r[0], "retry_count": r[1], "updated_at": r[2]}
+            for r in rows
+        ],
+        "total": len(rows),
+    })
 
+# -------------------------------------------------------
+# API: /api/retry  — reset nhung code duoc chon ve pending
+# -------------------------------------------------------
+@app.route("/api/retry", methods=["POST"])
+def api_retry():
+    data  = request.get_json(silent=True) or {}
+    codes = data.get("codes", [])
+
+    if not codes or not isinstance(codes, list):
+        return jsonify({"ok": False, "error": "codes must be a non-empty list"}), 400
+
+    # Build one statement per code so we get per-code feedback
+    statements = [
+        (
+            "UPDATE process SET status='pending', retry_count=0, updated_at=? WHERE code=? AND status='exhausted'",
+            (int(time.time()), code),
+        )
+        for code in codes
+    ]
+    raw_results = db_write_many(statements)
+
+    results   = []
+    ok_count  = 0
+    fail_count = 0
+    for code, (rowcount, err) in zip(codes, raw_results):
+        if err:
+            results.append({"code": code, "ok": False, "error": err})
+            fail_count += 1
+        elif rowcount == 0:
+            # Code ton tai nhung khong phai exhausted (hoac khong tim thay)
+            results.append({"code": code, "ok": False, "error": "not found or not exhausted"})
+            fail_count += 1
+        else:
+            results.append({"code": code, "ok": True})
+            ok_count += 1
+
+    return jsonify({
+        "ok":         fail_count == 0,
+        "ok_count":   ok_count,
+        "fail_count": fail_count,
+        "results":    results,
+    })
+
+# -------------------------------------------------------
+# API: /api/retry_all  — reset toan bo exhausted ve pending
+# -------------------------------------------------------
+@app.route("/api/retry_all", methods=["POST"])
+def api_retry_all():
+    rowcount, err = db_write(
+        "UPDATE process SET status='pending', retry_count=0, updated_at=? WHERE status='exhausted'",
+        (int(time.time()),),
+    )
+    if err:
+        return jsonify({"ok": False, "error": err, "ok_count": 0, "fail_count": 0}), 500
+
+    return jsonify({
+        "ok":        True,
+        "ok_count":  rowcount,
+        "fail_count": 0,
+        "message":   f"Reset {rowcount} exhausted code(s) to pending.",
+    })
 
 # -------------------------------------------------------
 # API: /api/actors/stats
