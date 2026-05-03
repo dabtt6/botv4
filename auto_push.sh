@@ -5,7 +5,7 @@ REPO_DIR="/docker/media-stack/botv4"
 cd $REPO_DIR || exit
 
 while true; do
-    inotifywait -r -e modify,create,delete,move .
+    /usr/bin/inotifywait -r -e modify,create,delete,move .
 
     echo "[WAIT] batching changes..."
     sleep 5
