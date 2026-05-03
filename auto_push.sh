@@ -7,9 +7,17 @@ cd $REPO_DIR || exit
 while true; do
     inotifywait -r -e modify,create,delete,move .
 
-    echo "[AUTO PUSH] Detected change..."
+    echo "[WAIT] batching changes..."
+    sleep 5
 
     git add .
-    git commit -m "auto update $(date '+%Y-%m-%d %H:%M:%S')" || true
+
+    # nếu không có thay đổi thì skip
+    git diff --cached --quiet && continue
+
+    echo "[AUTO PUSH] committing..."
+    git commit -m "auto update $(date '+%Y-%m-%d %H:%M:%S')"
+
+    echo "[AUTO PUSH] pushing..."
     git push origin main
 done
