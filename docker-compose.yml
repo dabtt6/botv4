@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  pikpak-bot:
+    build: .
+    container_name: pikpak-bot-v4
+    volumes:
+      - ./crawler_master_full.db:/app/crawler_master_full.db
+      - /data/downloads:/data/downloads
+      - /data/movies:/data/movies
+      - /root/.config/pikpaktui:/root/.config/pikpaktui
+      - ./dashboard.py:/app/dashboard.py
+      - ./dashboard.html:/app/dashboard.html
+      - ./dashboard_config.json:/app/dashboard_config.json
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      - ./bot.env:/app/bot.env
+    restart: unless-stopped
+    network_mode: "host"
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - DB_NAME=/app/crawler_master_full.db
+      - PIKPAK_USER=${PIKPAK_USER}
+      - PIKPAK_PASS=${PIKPAK_PASS}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
