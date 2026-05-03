@@ -5,7 +5,7 @@ REPO_DIR="/docker/media-stack/botv4"
 cd $REPO_DIR || exit
 
 while true; do
-    /usr/bin/inotifywait -r -e modify,create,delete,move .
+    /usr/bin/inotifywait -r -e modify,create,delete,move --exclude '(\.git|\.swp|\.log|\.db)' .
 
     echo "[WAIT] batching changes..."
     sleep 5
