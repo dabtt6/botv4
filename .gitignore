@@ -24,3 +24,8 @@ docker-compose.override.yml
 # Temp
 tmp/
 cache/
+
+# Editor temp
+*.swp
+*.swo
+*~
