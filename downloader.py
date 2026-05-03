@@ -331,6 +331,13 @@ def resume():
     """
     print("[DOWNLOADER] Resume check...", flush=True)
 
+    # Migration: them cot reset_count neu chua co
+    try:
+        db_run_wait("ALTER TABLE process ADD COLUMN reset_count INTEGER DEFAULT 0")
+        print("[DOWNLOADER] Migration: added reset_count column.", flush=True)
+    except Exception:
+        pass  # Da ton tai, bo qua
+
     # Check process table
     rows = db_get("SELECT code FROM process WHERE status IN ('downloading','downloaded')")
     for (code,) in rows:
@@ -403,13 +410,31 @@ def _download_loop():
     import queue as _queue
 
     while True:
-        # Reset exhausted neu khong con pending nao
+        # Reset exhausted neu khong con pending nao.
+        # Gioi han MAX_RESETS lan: qua nguong -> giu nguyen exhausted de control panel xu ly.
+        MAX_RESETS = 3
         pending_count = db_get("SELECT COUNT(*) FROM process WHERE status='pending' AND on_disk=0")[0][0]
         if pending_count == 0:
-            exhausted = db_get("SELECT COUNT(*) FROM process WHERE status='exhausted'")[0][0]
-            if exhausted > 0:
-                print(f"[DOWNLOADER] No pending, resetting {exhausted} exhausted -> pending.", flush=True)
-                db_run_wait("UPDATE process SET status='pending', retry_count=0 WHERE status='exhausted'")
+            resettable = db_get(
+                "SELECT COUNT(*) FROM process WHERE status='exhausted' AND COALESCE(reset_count,0) < ?",
+                (MAX_RESETS,)
+            )[0][0]
+            stuck = db_get(
+                "SELECT COUNT(*) FROM process WHERE status='exhausted' AND COALESCE(reset_count,0) >= ?",
+                (MAX_RESETS,)
+            )[0][0]
+            if resettable > 0:
+                print(f"[DOWNLOADER] No pending, resetting {resettable} exhausted -> pending (will try {MAX_RESETS} more times).", flush=True)
+                db_run_wait("""
+                    UPDATE process
+                    SET status='pending',
+                        retry_count=0,
+                        reset_count=COALESCE(reset_count,0)+1,
+                        updated_at=?
+                    WHERE status='exhausted' AND COALESCE(reset_count,0) < ?
+                """, (int(time.time()), MAX_RESETS))
+            if stuck > 0:
+                print(f"[DOWNLOADER] {stuck} code(s) permanently exhausted (hit {MAX_RESETS}-reset limit), skipping.", flush=True)
             time.sleep(DOWNLOAD_LOOP_INTERVAL)
             continue
 
