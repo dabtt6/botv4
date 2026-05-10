@@ -4,7 +4,7 @@
   <IsStartupWizardCompleted>false</IsStartupWizardCompleted>
   <EnableMetrics>false</EnableMetrics>
   <EnableNormalizedItemByNameIds>true</EnableNormalizedItemByNameIds>
-  <IsPortAuthorized>false</IsPortAuthorized>
+  <IsPortAuthorized>true</IsPortAuthorized>
   <QuickConnectAvailable>true</QuickConnectAvailable>
   <EnableCaseSensitiveItemIds>true</EnableCaseSensitiveItemIds>
   <DisableLiveTvChannelUserDataName>true</DisableLiveTvChannelUserDataName>
@@ -141,7 +141,13 @@
   <EnableGroupingShowsIntoCollections>false</EnableGroupingShowsIntoCollections>
   <DisplaySpecialsWithinSeasons>true</DisplaySpecialsWithinSeasons>
   <CodecsUsed />
-  <PluginRepositories />
+  <PluginRepositories>
+    <RepositoryInfo>
+      <Name>Jellyfin Stable</Name>
+      <Url>https://repo.jellyfin.org/files/plugin/manifest.json</Url>
+      <Enabled>true</Enabled>
+    </RepositoryInfo>
+  </PluginRepositories>
   <EnableExternalContentInSuggestions>true</EnableExternalContentInSuggestions>
   <ImageExtractionTimeoutMs>0</ImageExtractionTimeoutMs>
   <PathSubstitutions />
@@ -157,7 +163,16 @@
   <DummyChapterDuration>0</DummyChapterDuration>
   <ChapterImageResolution>MatchSource</ChapterImageResolution>
   <ParallelImageEncodingLimit>0</ParallelImageEncodingLimit>
-  <CastReceiverApplications />
+  <CastReceiverApplications>
+    <CastReceiverApplication>
+      <Id>F007D354</Id>
+      <Name>Stable</Name>
+    </CastReceiverApplication>
+    <CastReceiverApplication>
+      <Id>6F511C87</Id>
+      <Name>Unstable</Name>
+    </CastReceiverApplication>
+  </CastReceiverApplications>
   <TrickplayOptions>
     <EnableHwAcceleration>false</EnableHwAcceleration>
     <EnableHwEncoding>false</EnableHwEncoding>
