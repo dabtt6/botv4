@@ -50,10 +50,7 @@
   <TypeOptions>
     <TypeOptions>
       <Type>Movie</Type>
-      <MetadataFetchers>
-        <string>TheMovieDb</string>
-        <string>The Open Movie Database</string>
-      </MetadataFetchers>
+      <MetadataFetchers />
       <MetadataFetcherOrder>
         <string>TheMovieDb</string>
         <string>The Open Movie Database</string>
