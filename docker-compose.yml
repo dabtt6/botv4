@@ -24,3 +24,17 @@ services:
       - PIKPAK_PASS=${PIKPAK_PASS}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    network_mode: "host"
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - /data/movies:/media/movies
+    devices:
+      - /dev/dri:/dev/dri
