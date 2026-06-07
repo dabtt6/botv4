@@ -1,1 +1,1 @@
-{"StartTimeUtc":"2026-06-07T07:16:10.7012049Z","EndTimeUtc":"2026-06-07T07:18:27.4521482Z","Status":"Aborted","Name":"Scan Media Library","Key":"RefreshLibrary","Id":"7738148ffcd07979c7ceb148e06b3aed"}
+{"StartTimeUtc":"2026-06-07T07:27:34.435278Z","EndTimeUtc":"2026-06-07T07:32:06.7050243Z","Status":"Completed","Name":"Scan Media Library","Key":"RefreshLibrary","Id":"7738148ffcd07979c7ceb148e06b3aed"}
